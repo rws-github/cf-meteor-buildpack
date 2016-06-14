@@ -5,6 +5,9 @@ CACHE_DIR=$2
 METEOR_HOME=$BUILD_DIR/.meteor/local
 PATH=$METEOR_HOME/usr/bin:$METEOR_HOME/usr/lib/meteor/bin:$PATH
 
+label_color='\033[0;33m'
+no_color='\033[0m' # No Color
+
 indent() {
   c='s/^/       /'
   case $(uname) in
@@ -14,7 +17,7 @@ indent() {
 }
 
 status() {
-  echo "-----> $*"
+  echo "${label_color}-----> $*${no_color}"
 }
 
 node_version=$(curl --silent --get https://semver.io/node/resolve/4.x)
@@ -37,6 +40,8 @@ install_node() {
   mv $BUILD_DIR/node-v$node_version-linux-x64 $BUILD_DIR/.vendor/node
   chmod +x $BUILD_DIR/.vendor/node/bin/*
   PATH=$BUILD_DIR/.vendor/node/bin:$PATH
+  node_v=$(node -v)
+  status "Node version: $node_v"
 }
 
 install_meteor() {
@@ -69,7 +74,8 @@ install_meteor() {
 
   pwd
   ls -la
-  df
+  status "Disk Usage"
+  df -h
 }
 
 build() {
@@ -81,9 +87,12 @@ build() {
     status "Install meteor dependencies from app.."
     meteor npm install
     status "Dependencies for the app have been installed"
-    df
-    status "Listing installed modules"
+    status "Disk Usage"
+    df -h
+    status "Listing node_modules"
     ls -la node_modules/
+    status "Meteor packages"
+    cat .meteor/packages
     status "Meteor build to deploy directory"
     meteor build --directory deploy --server http://localhost:3000 --server-only
     status "Meteor build exit code $?"
