@@ -5,9 +5,6 @@ CACHE_DIR=$2
 METEOR_HOME=$BUILD_DIR/.meteor/local
 PATH=$METEOR_HOME/usr/bin:$METEOR_HOME/usr/lib/meteor/bin:$PATH
 
-label_color='\033[0;33m'
-no_color='\033[0m' # No Color
-
 indent() {
   c='s/^/       /'
   case $(uname) in
@@ -17,7 +14,7 @@ indent() {
 }
 
 status() {
-  echo "${label_color}-----> $*${no_color}"
+  echo "-----> $*"
 }
 
 node_version=$(curl --silent --get https://semver.io/node/resolve/4.x)
@@ -42,6 +39,7 @@ install_node() {
   PATH=$BUILD_DIR/.vendor/node/bin:$PATH
   node_v=$(node -v)
   status "Node version: $node_v"
+  echo ""
 }
 
 install_meteor() {
@@ -76,6 +74,7 @@ install_meteor() {
   ls -la
   status "Disk Usage"
   df -h
+  echo ""
 }
 
 build() {
@@ -85,26 +84,35 @@ build() {
     ls -la
 
     status "Install meteor dependencies from app.."
-    meteor npm install
+    meteor npm install --production
     status "Dependencies for the app have been installed"
+    echo ""
     status "Disk Usage"
     df -h
+    echo ""
     status "Listing node_modules"
     ls -la node_modules/
+    echo ""
     status "Meteor packages"
     cat .meteor/packages
+    echo ""
     status "Meteor build to deploy directory"
     meteor build --directory deploy --server http://localhost:3000 --server-only
     status "Meteor build exit code $?"
+    echo ""
+    status "Disk Usage"
+    df -h
+    echo ""
     if [ -d  "deploy/bundle/programs/server" ]; then
-      pwd
-      ls -la
       status "Meteor built app:"
       ls -lR deploy/ | head -n 100
       cd deploy/bundle/programs/server
-      npm install 2>&1 | indent
+      npm install --production 2>&1 | indent
       mv $BUILD_DIR/.vendor $BUILD_DIR/vendor
-      df
+      echo ""
+      status "Disk Usage"
+      df -h
+      echo ""
     else
       status "A problem occurred during staging. The meteor app could not be built."
       status "Please increase the available file descriptors in your manifest.yml:"
