@@ -21,12 +21,12 @@ node_version=$(curl --silent --get https://semver.io/node/resolve/0.10.x)
 
 install_node() {
   if [ -f "$BUILD_DIR/.vendor/node/bin/node" ] ; then
-    status "Skipping Node installation. Already installed."
+    status "\nSkipping Node installation. Already installed."
     return
   fi
 
   # Download node from Heroku's S3 mirror of nodejs.org/dist
-  status "Downloading and installing node $node_version"
+  status "\nDownloading and installing node $node_version"
   NODE_INSTALLER=node-installer.tar.gz
   NODE_URL="http://s3pository.heroku.com/node/v$node_version/node-v$node_version-linux-x64.tar.gz"
   curl $NODE_URL > $NODE_INSTALLER
@@ -48,11 +48,11 @@ install_meteor() {
   # status "Install Meteor"
   # export PATH=/usr/bin:$PATH # necessary for install script to run from URL
   # curl https://install.meteor.com | sh
-  status "Downloading Meteor install script"
+  status "\nDownloading Meteor install script"
   METEOR_INSTALL_SCRIPT=install_meteor.sh
   curl https://install.meteor.com/ > $METEOR_INSTALL_SCRIPT
 
-  status "Installing Meteor connected to $MONGO_URL"
+  status "\nInstalling Meteor connected to $MONGO_URL"
   sed -e '/^#!\/bin\/sh/ s/$/ -x/' \
     -e 's/set -/#set -/' \
     -e 's/curl --progress-bar --fail.*/curl "$TARBALL_URL" > meteor-bundle.tgz; tar -xzf meteor-bundle.tgz -C "$INSTALL_TMPDIR" -o/' \
@@ -60,11 +60,11 @@ install_meteor() {
   chmod +x install-meteor-verbose.sh
 
   cat install-meteor-verbose.sh
-  status "Execute ./install-meteor-verbose.sh"
+  status "\nExecute ./install-meteor-verbose.sh"
   ./install-meteor-verbose.sh
   status "Done"
 
-  status "Updating PATH with Meteor"
+  status "\nUpdating PATH with Meteor"
   PATH=$HOME/.meteor:$PATH
 
   pwd
@@ -77,26 +77,28 @@ build() {
     pwd
     ls -la
 
-    status "Install meteor dependencies from app.."
+    status "\nInstall meteor dependencies from app.."
     meteor npm install --production
     status "Dependencies for the app have been installed"
-    status "Listing installed modules"
+    status "\nListing installed modules"
     ls -la node_modules/
+    status "\nMeteor build to deploy directory"
     meteor build --directory deploy --server http://localhost:3000 --server-only
+    status "Meteor build exit code $?"
     if [ -d  "deploy/bundle/programs/server" ]; then
       pwd
       ls -la
-      status "Meteor built app:"
+      status "\nMeteor built app:"
       ls -lR deploy/ | head -n 100
       cd deploy/bundle/programs/server
       npm install 2>&1 | indent
       mv $BUILD_DIR/.vendor $BUILD_DIR/vendor
     else
-      status "A problem occurred during staging. The meteor app could not be built."
+      status "\nA problem occurred during staging. The meteor app could not be built."
       status "Please increase the available file descriptors in your manifest.yml:"
       status "applications:"
-      status " - name: {name}"
-      status " file_descriptors: 99999"
+      status "- name: {name}"
+      status "  file_descriptors: 99999"
       exit 1
     fi
   )
@@ -109,7 +111,7 @@ install_node
 install_meteor
 build
 
-status "Checking for post_compile script"
+status "\nChecking for post_compile script"
 if [ -f $BUILD_DIR/bin/post_compile ] ; then
     status "Running post_compile hook"
     chmod +x $BUILD_DIR/bin/post_compile
